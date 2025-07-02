@@ -32,18 +32,19 @@ export async function loginUser(email, password) {
     body: JSON.stringify({ email, password }),
     credentials: 'include',
   });
-  let debugInfo = '';
-  try {
-    debugInfo = await res.clone().text();
-  } catch (e) {
-    debugInfo = 'Could not read response body';
-  }
+
   if (!res.ok) {
-    throw new Error(`Invalid credentials. Debug: ${debugInfo}`);
+    let message = 'Invalid credentials.';
+    try {
+      const errorData = await res.json();
+      if (errorData?.message && typeof errorData.message === 'string') {
+        message = errorData.message;
+      }
+    } catch {
+      // Ignore JSON parse errors
+    }
+    throw new Error(message); // Clean message only
   }
-  try {
-    return await res.json();
-  } catch (e) {
-    throw new Error(`Login succeeded but could not parse JSON. Debug: ${debugInfo}`);
-  }
+
+  return res.json();
 }
